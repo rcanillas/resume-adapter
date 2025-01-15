@@ -41,14 +41,11 @@ if not check_api_key():
         api_key = st.text_input(
             "Please enter your OpenAI API key",
             type="password",
-            help="Your API key will be saved in the .secrets file"
+            help="Your API key will be saved in memory only."
         )
         
         if api_key:
             try:
-                # Save to .secrets file
-                with open('.secrets', 'w') as f:
-                    f.write(f'OPENAI_API_KEY={api_key}')
                 os.environ['OPENAI_API_KEY'] = api_key
                 st.success("✅ API key saved successfully!")
                 warn.empty()

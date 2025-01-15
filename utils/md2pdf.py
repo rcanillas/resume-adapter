@@ -4,6 +4,61 @@ import mdformat
 from pathlib import Path
 import tempfile
 import os
+import subprocess
+import platform
+
+def ensure_wkhtmltopdf():
+    """Check if wkhtmltopdf is installed and set in PATH, install if missing."""
+    if os.getenv("PATH_TO_WKHTMLTOPDF"):
+        return
+    
+    # Check if we're on a Linux system
+    if platform.system() != "Linux":
+        raise EnvironmentError(
+            "Automatic installation only supported on Linux. "
+            "Please install wkhtmltopdf manually from: https://wkhtmltopdf.org/downloads.html"
+        )
+    
+    try:
+        # Try to find wkhtmltopdf in system
+        result = subprocess.run(['which', 'wkhtmltopdf'], 
+                              capture_output=True, 
+                              text=True)
+        
+        if result.returncode == 0:
+            # Found it, set the environment variable
+            wkhtmltopdf_path = result.stdout.strip()
+            os.environ["PATH_TO_WKHTMLTOPDF"] = wkhtmltopdf_path
+            return
+        
+        # Not found, try to install it
+        print("Installing wkhtmltopdf...")
+        subprocess.run([
+            'sudo', 'apt-get', 'update'
+        ], check=True)
+        
+        subprocess.run([
+            'sudo', 'apt-get', 'install', '-y', 'wkhtmltopdf'
+        ], check=True)
+        
+        # Get the path after installation
+        result = subprocess.run(['which', 'wkhtmltopdf'], 
+                              capture_output=True, 
+                              text=True, 
+                              check=True)
+        
+        wkhtmltopdf_path = result.stdout.strip()
+        os.environ["PATH_TO_WKHTMLTOPDF"] = wkhtmltopdf_path
+        print(f"wkhtmltopdf installed successfully at: {wkhtmltopdf_path}")
+        
+    except subprocess.CalledProcessError as e:
+        raise EnvironmentError(
+            "Failed to install wkhtmltopdf. Please install it manually: "
+            "https://wkhtmltopdf.org/downloads.html"
+        ) from e
+
+# Call the function at module import
+ensure_wkhtmltopdf()
 
 def markdown_to_pdf(input_path: str, output_path: str = None, style: str = "professional") -> str:
     """Convert a markdown file to PDF using pdfkit (wkhtmltopdf).
@@ -16,7 +71,8 @@ def markdown_to_pdf(input_path: str, output_path: str = None, style: str = "prof
     Returns:
         str: Path to the generated PDF file
     """
-    config = pdfkit.configuration(wkhtmltopdf=r'C:\Program Files\wkhtmltopdf\bin\wkhtmltopdf.exe')
+    pdf_engine_path = os.getenv("PATH_TO_WKHTMLTOPDF")
+    config = pdfkit.configuration(wkhtmltopdf=pdf_engine_path)
     
     # Configurable parameters with smaller fonts
     STYLES = {

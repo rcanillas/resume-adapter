@@ -140,7 +140,8 @@ def _create_developer_parser():
     )
 
     # Setup the language model
-    load_dotenv(".secrets")
+    if "OPENAI_API_KEY" not in os.environ:
+        load_dotenv(".secrets")
     model = ChatOpenAI(
             model="gpt-4o-mini", temperature=0, api_key=os.getenv("OPENAI_API_KEY")
     ).with_structured_output(DeveloperModel)
